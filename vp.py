@@ -1,66 +1,261 @@
 #!/usr/bin/env python
+from prototype import Prototype
+
+class Position(object):
+	def __init__(self, x, y, anchor=None):
+		self.x = x
+		self.y = y
+		self.anchor = anchor
+
+	def move(self, x, y):
+		return Position(self.x + x, self.y + y, self.anchor)
+
+	def setx(self, x):
+		return Position(x, self.y, self.anchor)
+	
+	def sety(self, y):
+		return Position(self.x, y, self.anchor)
+	
+	def write(self, out):
+		if self.anchor == None:
+			str = "(%.3f, %.3f)" % (self.x, self.y)
+		elif self.x == 0 and self.y == 0:
+			str = "(%s)" % self.anchor
+		else:
+			str = "([xshift=%.3f,yshift=%.3f]%s)" % (self.x, self.y, self.anchor)
+		out.write(str)
+
+Origin = Position(0, 0)
+
+class Mark(Prototype):
+	defaults          = Prototype()
+	defaults.position = Origin
+
+	def __init__(self):
+		super(Mark,self).__init__()
+		self.parent = None
+
+	# A special getter which always returns lazy values
+	def __getattribute__(self, name):
+		try:
+			val = super(Mark,self).__getattribute__(name)
+		except AttributeError:
+			# if we can't find the value look it up in defaults
+			defaults = super(Mark,self).__getattribute__("defaults")
+			val = getattr(defaults, name)
+
+		if not callable(val):
+			return lambda : val
+		return val
+
+	def render(self, out):
+		out.write("% a mark\n")
+
+	def set_parent(self, new_parent):
+		self.parent = new_parent
+
+class AnchorGetter(object):
+	def __init__(self, target):
+		self.target = target
+
+	def __getattr__(self, name):
+		anchor = self.target.get_anchor(name)
+		if anchor == None:
+			raise AttributeError("'%s' has no anchor '%s'" % (self.target, name))
+		return anchor
+
+class Rectangle(Mark):
+	defaults           = Prototype(Mark.defaults)
+	defaults.placement = "south west"
+	defaults.width     = 1.0
+	defaults.height    = 1.0
+	defaults.style     = None
+
+	def __init__(self):
+		super(Rectangle,self).__init__()
+		self.anchors = AnchorGetter(self)
+
+	def get_anchor(self, name):
+		assert self.placement() == "south west" # no support for other placements (yet)
+		base = self.position
+
+		if name == "south_west":
+			return base
+		elif name == "south":
+			return lambda : base().move(self.width() / 2., 0)
+		elif name == "south_east":
+			return lambda : base().move(self.width(), 0)
+		elif name == "west":
+			return lambda : base().move(0, self.height() / 2.)
+		elif name == "center":
+			return lambda : base().move(self.width() / 2., self.height() / 2.)
+		elif name == "east":
+			return lambda : base().move(self.width(), self.height() / 2.)
+		elif name == "north_west":
+			return lambda : base().move(0, self.height())
+		elif name == "north":
+			return lambda : base().move(self.width() / 2., self.height())
+		elif name == "north_east":
+			return lambda : base().move(self.width(), self.height())
+		return None
+
+	def render(self, out):
+		style = self.style()
+		# No need to draw anything if style isn't set
+		if style == None:
+			return
+
+		out.write("\\path[%s] " % style)
+		self.anchors().south_west().write(out)
+		out.write(" rectangle ")
+		self.anchors().north_east().write(out)
+		out.write(";\n")
+
+class Label(Mark):
+	defaults            = Prototype(Mark.defaults)
+	defaults.placement  = "south"
+	defaults.label      = ""
+	defaults.labelstyle = None
+
+	id = 0
+
+	def __init__(self):
+		super(Label,self).__init__()
+		self.anchors = AnchorGetter(self)
+
+	def get_anchor(self, name):
+		myname = self.__myname
+		if name in [ "north_west", "north", "north_east", "west", "center", "east", "south_west", "south", "south_east" ]:
+			name = name.replace("_", " ")
+			return (lambda : Position(0, 0, "%s.%s" % (self.__myname, name)))
+
+	def render(self, out):
+		style     = self.style()
+		label     = self.label()
+		placement = self.placement()
+
+		if style != None:
+			style = "[%s,anchor=%s]" % (style, placement)
+		else:
+			style = "[anchor=%s]" % placement
+		self.__myname = "label%d" % Label.id
+		Label.id += 1
+
+		out.write("\\node%s (%s) at " % (style, self.__myname()))
+		self.position().write(out)
+		out.write(" { %s }" % label)
+		out.write(";\n")
+
+class Panel(Rectangle):
+	defaults  = Prototype(Rectangle.defaults)
+
+	def __init__(self):
+		super(Panel,self).__init__()
+		self.children = []
+
+	def add(self, mark):
+		self.children().append(mark) # hmm... non lazy variant
+		mark.set_parent(self)
+		return mark
+
+	def render(self, out):
+		super(Panel,self).render(out)
+		for child in self.children():
+			child.render(out)
+
+# A Panel which should be used as the toplevel panel in the graphic
+class Graphic(Panel):
+	defaults         = Prototype(Panel.defaults)
+	defaults.options = "[baseline=(current bounding box.south)]"
+
+	def __init__(self):
+		super(Graphic,self).__init__()
+
+	def render(self, out):
+		opts = self.options
+		out.write("\\begin{tikzpicture}%s%%\n" % self.options())
+		super(Graphic,self).render(out)
+		out.write("\\end{tikzpicture}\n")
+
+class Line(Mark):
+	defaults        = Prototype(Mark.defaults)
+	defaults.xshift = 1
+	defaults.yshift = 0
+	defaults.style  = "draw"
+
+	def __init__(self):
+		super(Mark,self).__init__()
+		self.anchors = AnchorGetter(self)
+
+	def get_anchor(self, name):
+		if name == "begin":
+			return self.position
+		elif name == "end":
+			return lambda: self.position().move(self.xshift(), self.yshift())
+		return None
+
+	def render(self, out):
+		style = self.style()
+		if style == None:
+			return
+
+		out.write("\\path[%s] " % style)
+		self.anchors().begin().write(out)
+		out.write(" -- ")
+		self.anchors().end().write(out)
+		out.write(";\n")
+
+# A color value
+class Color(Mark):
+	defaults            = Prototype(Mark.defaults)
+	defaults.colormodel = "hsb"
+	defaults.color      = (.0, .0, .0)
+
+	id = 0
+
+	def __init__(self):
+		super(Mark,self).__init__()
+
+	def render(self, out):
+		name  = "color%d" % Color.id
+		model = self.colormodel()
+		color = self.color()
+		Color.id += 1
+		
+		out.write("\\definecolor{%s}{%s}{%.3f,%.3f,%.3f}\n" % (name, model, color[0], color[1], color[2]))
+		self.name = name
+
+# A special object that can be inserted into Panels. It collects a list of
+# children and a list of data. It then iterates over all data elements
+# instantiating a new "copy" (really a small class with prototype) with
+# datum and index set to the data/element number of the currently processed
+# datum.
 #
-# Attempt to rebuild: http://applestooranges.com/blog/post/css-for-bar-graphs/
-#  Vertical CSS Rectangle Graph example
-import vp
-import sys
+# TODO: children/data is strictly evaluate should we make this lazy too?
+class Iterate(Mark):
+	def __init__(self, data = []):
+		super(Iterate,self).__init__()
+		self.data     = data
+		self.children = []
+		self.datum    = lambda: self.datum()
+		self.index    = lambda: self.index()
 
-data = [
-	("Critical", 22, (0.99, 0.64, 0.67)),
-	("High",     7,  (0.12, 0.80, 0.78)),
-	("Medium",   3,  (0.16, 0.94, 0.76)),
-	("Low",      8,  (0.61, 0.58, 0.70)),
-	("Info",     2,  (0.27, 0.42, 0.51))
-]
+	def add(self, mark):
+		self.children().append(mark)   # hmm this isn't lazy...
+		mark.set_parent(self)
+		return mark
 
-# little helper function
-def addcolors(col1,col2):
-	return (col1[0]+col2[0], col1[1]+col2[1], col1[2]+col2[2])
+	def render(self, out):
+		data     = self.data()
+		children = self.children()
 
-vis          = vp.Graphic()
-vis.barstyle = "draw=black,rounded corners=3pt"
-vis.width    = 7.5
-vis.height   = 6
-
-# Part1: Draw some ruler lines
-riter = vis.add(vp.Iterate(range(5,23,5)))
-
-rule           = riter.add(vp.Line())
-rule.position  = lambda : vp.Position(0, riter.datum() * 0.25)
-rule.xshift    = vis.width
-rule.linestyle = "draw=black!30"
-
-# Part2: draw bar, label on top of the bar and label below the bar for each
-#        value
-
-iter = vis.add(vp.Iterate(data))
-# Project values out of the datum for convenience
-iter.label = lambda : iter.datum()[0]
-iter.value = lambda : iter.datum()[1]
-iter.color = lambda : iter.datum()[2]
-
-topcolor       = iter.add(vp.Color())
-topcolor.color = iter.color 
-
-bottomcolor       = iter.add(vp.Color())
-bottomcolor.color = lambda: addcolors(iter.color(), (0, 0, +0.15))
-
-bar = iter.add(vp.Rectangle())
-bar.position = lambda : vp.Position(iter.index() * 1.5 + 0.5, 0)
-bar.width    = 0.5
-bar.height   = lambda : iter.value() * 0.25
-bar.barstyle = lambda : "shade,shading=axis,top color=%s,bottom color=%s" % (topcolor.name(), bottomcolor.name())
-
-label            = iter.add(vp.Label())
-label.label      = iter.value
-label.position   = bar.anchors().north
-label.labelstyle = "text=white"
-label.placement  = "north"
-
-description            = iter.add(vp.Label())
-description.label      = iter.label
-description.position   = lambda : bar.anchors().south().move(0, -0.3)
-description.labelstyle = "text=black"
-description.placement  = "north"
-
-vis.render(sys.stdout)
+		index = 0
+		for datum in data:
+			self.index = index
+			self.datum = datum
+			for child in children:
+				child.render(out)
+			index += 1
+		# if someone reference datum/index after this point its a bug
+		del self.datum
+		del self.index
