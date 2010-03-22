@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 from prototype import Prototype
 
 class Position(object):
@@ -25,6 +26,12 @@ class Position(object):
 			str = "([xshift=%.3f,yshift=%.3f]%s)" % (self.x, self.y, self.anchor)
 		out.write(str)
 
+# Convert angle in vp format [0:1] clockwise from top to tikz angle [0:360] counterclockwise from east
+def angle_to_tikz(angle):
+	return 90. - angle*360
+def angle_to_tikz_rotate(angle):
+	return angle*-360
+
 class PolarCoordinate(object):
 	def __init__(self, middle, angle, radius):
 		self.middle = middle
@@ -36,7 +43,13 @@ class PolarCoordinate(object):
 
 	def write(self, out):
 		assert self.middle.anchor == None  # not supported yet
-		str = "([xshift=%.3f,yshift=%.3f]%.3f:%.3f)" % (self.middle.x, self.middle.y, self.angle, self.radius)
+		x     = self.middle.x
+		y     = self.middle.y
+		polar = "%.3f:%.3f" % (angle_to_tikz(self.angle), self.radius)
+		if x == 0 and y == 0:
+			str = "(%s)" % polar
+		else:
+			str = "([xshift=%.3f,yshift=%.3f]%s)" % (x, y, polar)
 		out.write(str)
 
 Origin = Position(0, 0)
@@ -150,11 +163,11 @@ class Label(Mark):
 		placement = self.placement()
 		rotate    = self.rotate()
 		if rotate != None:
-			if style != None:
+			if style != "":
 				style += ","
-			style += "rotate=%s" % rotate
+			style += "rotate=%s" % angle_to_tikz_rotate(rotate)
 
-		if style != None:
+		if style != "":
 			style += ","
 		style += "anchor=%s" % placement
 
@@ -228,7 +241,7 @@ class Line(Mark):
 class Wedge(Mark):
 	defaults = Prototype(Mark.defaults)
 	defaults.angle  = 0
-	defaults.len    = 90.0  # wedge is between start_angle and start_angle+len
+	defaults.len    = 0.25  # wedge is between start_angle and start_angle+len
 	defaults.radius = 0.5
 	defaults.size   = 1.0
 	defaults.style  = "fill=black"
@@ -260,12 +273,15 @@ class Wedge(Mark):
 		if style == None:
 			return
 
+		start  = angle_to_tikz(self.angle())
+		end    = angle_to_tikz(self.angle()+self.len())
+		radius = self.radius()
 		out.write("\\path[%s] " % style)
 		self.anchors().inner_end().write(out)
-		out.write(" arc(%s:%s:%s) " % (self.angle()+self.len(), self.angle(), self.radius()))
+		out.write(" arc(%.3f:%.3f:%.3f)" % (end, start, radius))
 		out.write(" -- ")
 		self.anchors().outer_start().write(out)
-		out.write(" arc(%s:%s:%s) " % (self.angle(), self.angle()+self.len(), self.radius()+self.size()))
+		out.write(" arc(%.3f:%.3f:%.3f)" % (start, end, radius+self.size()))
 		out.write(" -- cycle;\n")
 
 # A color value
@@ -293,8 +309,6 @@ class Color(Mark):
 # instantiating a new "copy" (really a small class with prototype) with
 # datum and index set to the data/element number of the currently processed
 # datum.
-#
-# TODO: children/data is strictly evaluate should we make this lazy too?
 class Iterate(Mark):
 	def __init__(self, data = []):
 		super(Iterate,self).__init__()
@@ -302,6 +316,8 @@ class Iterate(Mark):
 		self.children = []
 		self.datum    = lambda: self.datum()
 		self.index    = lambda: self.index()
+		self.first    = {}
+		self.next     = {}
 
 	def add(self, mark):
 		self.children().append(mark)   # hmm this isn't lazy...
@@ -312,6 +328,9 @@ class Iterate(Mark):
 		data     = self.data()
 		children = self.children()
 
+		for key,val in self.first().iteritems():
+			setattr(self, key, val)
+
 		index = 0
 		for datum in data:
 			self.index = index
@@ -319,6 +338,9 @@ class Iterate(Mark):
 			for child in children:
 				child.render(out)
 			index += 1
+
+			for key,val in self.next().iteritems():
+				setattr(self, key, val())
 		# if someone reference datum/index after this point its a bug
 		del self.datum
 		del self.index
