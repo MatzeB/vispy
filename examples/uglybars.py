@@ -67,19 +67,26 @@ one          = vis.add(vp.Line())
 one.position = vp.Position(0, 4.)
 one.xshift   = vis.width
 
+bar_width = 5.
+skip      = 4.
+scale     = vis.width() / (len(data)*3*bar_width + (len(data)-1)*skip)
+bar_width *= scale
+skip      *= scale
+
+# Iterate over benchmarks
 iter      = vis.add(vp.Iterate())
 iter.data = data
 
 # convenience for placement
-iter.base = lambda: vp.Position(iter.index() * 1.9, 0)
+iter.base = lambda: vp.Position(iter.index() * (3*bar_width + skip), 0)
 
 # Create 3 bars
 bariter      = iter.add(vp.Iterate())
 bariter.data = lambda: iter.datum()[1]
 
 bar          = bariter.add(vp.Rectangle())
-bar.position = lambda: iter.base().move(bariter.index()*0.5, 0)
-bar.width    = 0.5
+bar.position = lambda: iter.base().move(bariter.index()*bar_width, 0)
+bar.width    = bar_width
 bar.height   = lambda: bariter.datum() * 4.
 bar.style    = lambda: "fill=%s" % barcolors[bariter.index()]
 
@@ -94,7 +101,7 @@ barlabel.placement = "west"
 
 # Place the benchmark name below the bars
 label           = iter.add(vp.Label())
-label.position  = lambda: iter.base().move(0.75, 0)
+label.position  = lambda: iter.base().move(bar_width + bar_width/2., 0)
 label.placement = "east"
 label.style     = "rotate=90,font=\\small"
 label.label     = lambda: iter.datum()[0]

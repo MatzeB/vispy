@@ -16,6 +16,7 @@ cat > build/doc.tex <<'__EOF__'
 
 \begin{document}
 
+	\thispagestyle{empty}
 	\input{picture.tex}
 
 \end{document}
@@ -25,5 +26,6 @@ export PYTHONPATH="..:$PYTHONPATH"
 python $1 > build/picture.tex
 pushd build > /dev/null
 pdflatex doc.tex
+pdfcrop doc.pdf doc.pdf
 cp doc.pdf ../`basename $1 .py`.pdf
 popd > /dev/null
