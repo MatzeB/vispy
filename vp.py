@@ -25,6 +25,20 @@ class Position(object):
 			str = "([xshift=%.3f,yshift=%.3f]%s)" % (self.x, self.y, self.anchor)
 		out.write(str)
 
+class PolarCoordinate(object):
+	def __init__(self, middle, angle, radius):
+		self.middle = middle
+		self.angle  = angle
+		self.radius = radius
+
+	def move(self, x, y):
+		return PolarCoordinate(self.middle.move(x, y), self.angle, self.radius)
+
+	def write(self, out):
+		assert self.middle.anchor == None  # not supported yet
+		str = "([xshift=%.3f,yshift=%.3f]%.3f:%.3f)" % (self.middle.x, self.middle.y, self.angle, self.radius)
+		out.write(str)
+
 Origin = Position(0, 0)
 
 class Mark(Prototype):
@@ -112,10 +126,11 @@ class Rectangle(Mark):
 		out.write(";\n")
 
 class Label(Mark):
-	defaults            = Prototype(Mark.defaults)
-	defaults.placement  = "south"
-	defaults.label      = ""
-	defaults.labelstyle = None
+	defaults           = Prototype(Mark.defaults)
+	defaults.placement = "south"
+	defaults.label     = ""
+	defaults.style     = ""
+	defaults.rotate    = None
 
 	id = 0
 
@@ -133,21 +148,26 @@ class Label(Mark):
 		style     = self.style()
 		label     = self.label()
 		placement = self.placement()
+		rotate    = self.rotate()
+		if rotate != None:
+			if style != None:
+				style += ","
+			style += "rotate=%s" % rotate
 
 		if style != None:
-			style = "[%s,anchor=%s]" % (style, placement)
-		else:
-			style = "[anchor=%s]" % placement
+			style += ","
+		style += "anchor=%s" % placement
+
 		self.__myname = "label%d" % Label.id
 		Label.id += 1
 
-		out.write("\\node%s (%s) at " % (style, self.__myname()))
+		out.write("\\node[%s] (%s) at " % (style, self.__myname()))
 		self.position().write(out)
 		out.write(" { %s }" % label)
 		out.write(";\n")
 
 class Panel(Rectangle):
-	defaults  = Prototype(Rectangle.defaults)
+	defaults = Prototype(Rectangle.defaults)
 
 	def __init__(self):
 		super(Panel,self).__init__()
@@ -204,6 +224,49 @@ class Line(Mark):
 		out.write(" -- ")
 		self.anchors().end().write(out)
 		out.write(";\n")
+
+class Wedge(Mark):
+	defaults = Prototype(Mark.defaults)
+	defaults.angle  = 0
+	defaults.len    = 90.0  # wedge is between start_angle and start_angle+len
+	defaults.radius = 0.5
+	defaults.size   = 1.0
+	defaults.style  = "fill=black"
+
+	def __init__(self):
+		super(Mark,self).__init__()
+		self.anchors = AnchorGetter(self)
+
+	def get_anchor(self, name):
+		if name == "center":
+			return self.position
+		elif name == "inner_start":
+			return lambda: PolarCoordinate(self.position(), self.angle(), self.radius())
+
+		elif name == "inner_end":
+			return lambda: PolarCoordinate(self.position(), self.angle()+self.len(), self.radius())
+		elif name == "outer_start":
+			return lambda: PolarCoordinate(self.position(), self.angle(), self.radius()+self.size())
+		elif name == "outer_end":
+			return lambda: PolarCoordinate(self.position(), self.angle()+self.len(), self.radius()+self.size())
+		elif name == "inner":
+			return lambda: PolarCoordinate(self.position(), self.angle()+self.len()/2., self.radius())
+		elif name == "outer":
+			return lambda: PolarCoordinate(self.position(), self.angle()+self.len()/2., self.radius()+self.size())
+		return None
+
+	def render(self, out):
+		style = self.style()
+		if style == None:
+			return
+
+		out.write("\\path[%s] " % style)
+		self.anchors().inner_end().write(out)
+		out.write(" arc(%s:%s:%s) " % (self.angle()+self.len(), self.angle(), self.radius()))
+		out.write(" -- ")
+		self.anchors().outer_start().write(out)
+		out.write(" arc(%s:%s:%s) " % (self.angle(), self.angle()+self.len(), self.radius()+self.size()))
+		out.write(" -- cycle;\n")
 
 # A color value
 class Color(Mark):
