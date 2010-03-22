@@ -26,7 +26,7 @@ vis.height = 6
 riter = vis.add(vp.Iterate(range(5,23,5)))
 
 rule          = riter.add(vp.Line())
-rule.position = lambda : vp.Position(0, riter.datum() * 0.25)
+rule.position = lambda: vp.Position(0, riter.datum() * 0.25)
 rule.xshift   = vis.width
 rule.style    = "draw=black!30"
 
@@ -35,9 +35,9 @@ rule.style    = "draw=black!30"
 
 iter = vis.add(vp.Iterate(data))
 # Project values out of the datum for convenience
-iter.label = lambda : iter.datum()[0]
-iter.value = lambda : iter.datum()[1]
-iter.color = lambda : iter.datum()[2]
+iter.label = lambda: iter.datum()[0]
+iter.value = lambda: iter.datum()[1]
+iter.color = lambda: iter.datum()[2]
 
 topcolor       = iter.add(vp.Color())
 topcolor.color = iter.color 
@@ -46,10 +46,10 @@ bottomcolor       = iter.add(vp.Color())
 bottomcolor.color = lambda: addcolors(iter.color(), (0, 0, +0.15))
 
 bar = iter.add(vp.Rectangle())
-bar.position = lambda : vp.Position(iter.index() * 1.5 + 0.5, 0)
+bar.position = lambda: vp.Position(iter.index() * 1.5 + 0.5, 0)
 bar.width    = 0.5
-bar.height   = lambda : iter.value() * 0.25
-bar.style    = lambda : "shade,shading=axis,top color=%s,bottom color=%s" % (topcolor.name(), bottomcolor.name())
+bar.height   = lambda: iter.value() * 0.25
+bar.style    = lambda: "shade,shading=axis,top color=%s,bottom color=%s" % (topcolor.name(), bottomcolor.name())
 
 label           = iter.add(vp.Label())
 label.label     = iter.value
@@ -59,7 +59,7 @@ label.placement = "north"
 
 description           = iter.add(vp.Label())
 description.label     = iter.label
-description.position  = lambda : bar.anchors().south().move(0, -0.3)
+description.position  = lambda: bar.anchors().south().move(0, -0.3)
 description.style     = "text=black"
 description.placement = "north"
 

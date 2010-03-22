@@ -43,11 +43,11 @@ def ifelse(cond,true,false):
 	return false
 
 # Create the image
-vis        = vp.Graphic()
-vis.ptions = "baseline=(current bounding box.south)"
-vis.width  = 12
-vis.height = 6
-vis.style  = "draw"
+vis         = vp.Graphic()
+vis.options = "baseline=(current bounding box.south)"
+vis.width   = 12
+vis.height  = 6
+vis.style   = "draw"
 
 label_left = vis.add(vp.Label())
 label_left.style     = "rotate=90"
