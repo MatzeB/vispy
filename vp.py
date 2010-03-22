@@ -103,8 +103,17 @@ class Rectangle(Mark):
 		self.anchors = AnchorGetter(self)
 
 	def get_anchor(self, name):
-		assert self.placement() == "south west" # no support for other placements (yet)
-		base = self.position
+		placement = self.placement()
+		if placement == "south west":
+			base = self.position
+		elif placement == "south east":
+			base = self.position().move(-self.width(), 0)
+		elif placement == "north west":
+			base = self.position().move(0, -self.height())
+		elif placement == "north east":
+			base = self.position().move(-self.width(), -self.height())
+		else:
+			assert False # no support for all placements (yet)
 
 		if name == "south_west":
 			return base
