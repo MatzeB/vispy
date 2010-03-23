@@ -107,32 +107,42 @@ class Rectangle(Mark):
 		if placement == "south west":
 			base = self.position
 		elif placement == "south east":
-			base = self.position().move(-self.width(), 0)
+			base = lambda: self.position().move(-self.width(), 0)
+		elif placement == "south":
+			base = lambda: self.position().move(-self.width()/2., 0)
 		elif placement == "north west":
-			base = self.position().move(0, -self.height())
+			base = lambda: self.position().move(0, -self.height())
 		elif placement == "north east":
-			base = self.position().move(-self.width(), -self.height())
+			base = lambda: self.position().move(-self.width(), -self.height())
+		elif placement == "north":
+			base = lambda: self.position().move(-self.width()/2., -self.height())
+		elif placement == "west":
+			base = lambda: self.position().move(0, -self.height()/2.)
+		elif placement == "east":
+			base = lambda: self.position().move(-self.width(), -self.height()/2.)
+		elif placement == "center":
+			base = lambda: self.position().move(-self.width()/2., -self.height()/2.)
 		else:
-			assert False # no support for all placements (yet)
+			assert False # invalid/unknown placement
 
 		if name == "south_west":
 			return base
 		elif name == "south":
-			return lambda : base().move(self.width() / 2., 0)
+			return lambda: base().move(self.width() / 2., 0)
 		elif name == "south_east":
-			return lambda : base().move(self.width(), 0)
+			return lambda: base().move(self.width(), 0)
 		elif name == "west":
-			return lambda : base().move(0, self.height() / 2.)
+			return lambda: base().move(0, self.height() / 2.)
 		elif name == "center":
-			return lambda : base().move(self.width() / 2., self.height() / 2.)
+			return lambda: base().move(self.width() / 2., self.height() / 2.)
 		elif name == "east":
-			return lambda : base().move(self.width(), self.height() / 2.)
+			return lambda: base().move(self.width(), self.height() / 2.)
 		elif name == "north_west":
-			return lambda : base().move(0, self.height())
+			return lambda: base().move(0, self.height())
 		elif name == "north":
-			return lambda : base().move(self.width() / 2., self.height())
+			return lambda: base().move(self.width() / 2., self.height())
 		elif name == "north_east":
-			return lambda : base().move(self.width(), self.height())
+			return lambda: base().move(self.width(), self.height())
 		return None
 
 	def render(self, out):
@@ -147,17 +157,17 @@ class Rectangle(Mark):
 		self.anchors().north_east().write(out)
 		out.write(";\n")
 
-class Label(Mark):
+# (private) base class for everything which ends up as a tikz node
+class TikzNode(Mark):
 	defaults           = Prototype(Mark.defaults)
 	defaults.placement = "south"
-	defaults.label     = ""
 	defaults.style     = ""
 	defaults.rotate    = None
 
 	id = 0
 
 	def __init__(self):
-		super(Label,self).__init__()
+		super(TikzNode,self).__init__()
 		self.anchors = AnchorGetter(self)
 
 	def get_anchor(self, name):
@@ -165,9 +175,8 @@ class Label(Mark):
 			name = name.replace("_", " ")
 			return (lambda : Position(0, 0, "%s.%s" % (self.__myname(), name)))
 
-	def render(self, out):
+	def render_node_begin(self, out):
 		style     = self.style()
-		label     = self.label()
 		placement = self.placement()
 		rotate    = self.rotate()
 		if rotate != None:
@@ -179,13 +188,50 @@ class Label(Mark):
 			style += ","
 		style += "anchor=%s" % placement
 
-		self.__myname = "label%d" % Label.id
-		Label.id += 1
+		self.__myname = "%s%d" % (self.name_base(), TikzNode.id)
+		TikzNode.id += 1
 
 		out.write("\\node[%s] (%s) at " % (style, self.__myname()))
 		self.position().write(out)
-		out.write(" { %s }" % label)
-		out.write(";\n")
+		out.write(" { ")
+		
+	def render_node_end(self, out):
+		out.write(" };\n")
+
+class Label(TikzNode):
+	defaults       = Prototype(TikzNode.defaults)
+	defaults.label = ""
+
+	name_base = "label"
+
+	def __init__(self):
+		super(Label,self).__init__()
+
+	def render(self, out):
+		self.render_node_begin(out)
+		out.write(self.label())
+		self.render_node_end(out)
+
+class SubGraphics(TikzNode):
+	defaults = Prototype(TikzNode.defaults)
+	name_base = "subfig"
+
+	def __init__(self):
+		super(SubGraphics,self).__init__()
+		self.children = []
+
+	def add(self, mark):
+		self.children().append(mark) # hmm... non lazy variant
+		mark.set_parent(self)
+		return mark
+
+	def render(self, out):
+		self.render_node_begin(out)
+		out.write("\n \\begin{tikzpicture}\n")
+		for child in self.children():
+			child.render(out)
+		out.write("\\end{tikzpicture}\n")
+		self.render_node_end(out)
 
 class Panel(Rectangle):
 	defaults = Prototype(Rectangle.defaults)
