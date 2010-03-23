@@ -1,0 +1,202 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>~/develop/vispy/examples/speedup_alternative.py.html</title>
+<meta name="Generator" content="Vim/7.2">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<style type="text/css">
+<!--
+.Constant { color: #ff6060; }
+.Statement { color: #ffff00; }
+.Identifier { color: #00ffff; }
+.Special { color: #ff40ff; }
+pre { font-family: monospace; color: #000000; background-color: #ffffff; }
+body { font-family: monospace; color: #000000; background-color: #ffffff; }
+.Comment { color: #8080ff; }
+.PreProc { color: #ff40ff; }
+-->
+</style>
+</head>
+<body>
+<pre>
+<span class="Comment">#!/usr/bin/env python</span>
+<span class="Comment">#</span>
+<span class="Comment"># An alternative version of speedup.py (which was not used in the end)</span>
+<span class="PreProc">import</span> vp
+<span class="PreProc">import</span> sys
+
+title = [ &quot;<span class="Constant">benchmark</span>&quot;, &quot;<span class="Constant">gcc</span>&quot;, &quot;<span class="Constant">llvm</span>&quot;, &quot;<span class="Constant">heur4</span>&quot;, &quot;<span class="Constant">newalloc</span>&quot;, &quot;<span class="Constant">nocoal</span>&quot; ]
+rows = [
+    <span class="Comment"># benchmark,     gcc,    llvm, heur4, newalloc, bad</span>
+    [ &quot;<span class="Constant">164.gzip</span>&quot;,    119,   120,    107,  108,   118  ],
+    [ &quot;<span class="Constant">175.vpr</span>&quot;,      86,    86,   91.6,  90.1,  94.4 ],
+    [ &quot;<span class="Constant">176.gcc</span>&quot;,      49.2,  53.7, 53.1,  53.4,  56.3 ],
+    [ &quot;<span class="Constant">181.mcf</span>&quot;,      58,    60.7, 59.3,  57.0,  59.0 ],
+    [ &quot;<span class="Constant">186.crafty</span>&quot;,   63.4,  57.6, 56.5,  56.9,  59.4 ],
+    [ &quot;<span class="Constant">197.parser</span>&quot;,  123,   133,  124  ,   122, 126   ],
+    [ &quot;<span class="Constant">253.perlbmk</span>&quot;,  76.9,  83.9, 84.3,  87.7,  94.2 ],
+    [ &quot;<span class="Constant">254.gap</span>&quot;,      57.4,  57.9, 62.7,  63.2,  66.4 ],
+    [ &quot;<span class="Constant">255.vortex</span>&quot;,   94.2, 112,  101  ,   102, 105   ],
+    [ &quot;<span class="Constant">256.bzip2</span>&quot;,    95.3, 101,   86.5,  86.6,  90.6 ],
+    [ &quot;<span class="Constant">300.twolf</span>&quot;,   138,   137,  131  , 129,   139   ],
+]
+
+<span class="Comment"># Adapt data: create arry with (name, [nocoal, newalloc, heur4]) entries</span>
+<span class="Statement">class</span> <span class="Identifier">Data</span>(object):
+    <span class="Statement">pass</span>
+
+data = []
+<span class="Statement">for</span> row <span class="Statement">in</span> rows:
+    nocoal   = float(row[title.index(&quot;<span class="Constant">nocoal</span>&quot;)])
+    newalloc = float(row[title.index(&quot;<span class="Constant">newalloc</span>&quot;)])
+    heur4    = float(row[title.index(&quot;<span class="Constant">heur4</span>&quot;)])
+    <span class="Comment"># Calculate speedup compared to nocoal</span>
+    newalloc = nocoal/newalloc
+    heur4    = nocoal/heur4
+    <span class="Statement">if</span> heur4 &lt; 1.0:
+        heur4 = 1.0
+    nocoal   = 1.0
+
+    datum = Data()
+    datum.name  = row[title.index(&quot;<span class="Constant">benchmark</span>&quot;)][4:]
+    datum.newalloc = newalloc
+    datum.heur4    = heur4
+    datum.nocoal   = nocoal
+    <span class="Statement">if</span> datum.newalloc &lt; datum.heur4:
+        datum.high       = &quot;<span class="Constant">heur4</span>&quot;
+        datum.low_value  = datum.newalloc
+        datum.high_value = datum.heur4
+    <span class="Statement">else</span>:
+        datum.high       = &quot;<span class="Constant">newalloc</span>&quot;
+        datum.low_value  = datum.heur4
+        datum.high_value = datum.newalloc
+    <span class="Comment">#datum.data  = [ (&quot;newalloc&quot;, newalloc), (&quot;heur4&quot;, heur4) ]</span>
+    <span class="Comment">#datum.data  = sorted(datum.data, key=lambda x: x[1])</span>
+    data.append(datum)
+
+styles = {}
+styles[&quot;<span class="Constant">newalloc</span>&quot;] = &quot;<span class="Constant">fill=green!40</span>&quot;
+styles[&quot;<span class="Constant">heur4</span>&quot;]    = &quot;<span class="Constant">fill=blue!15</span>&quot;
+styles[&quot;<span class="Constant">nocoal</span>&quot;]   = &quot;<span class="Constant">fill=black!30</span>&quot;
+
+bar_width = 1.
+bar_scale = 80.
+bar_skip  = 0.6
+
+<span class="Statement">def</span> <span class="Identifier">ifelse</span>(cond,true,false):
+    <span class="Statement">if</span> cond:
+        <span class="Statement">return</span> true
+    <span class="Statement">return</span> false
+
+<span class="Statement">def</span> <span class="Identifier">speedup_to_percent</span>(val):
+    <span class="Statement">return</span> &quot;<span class="Constant">%+.1f</span><span class="Special">\\</span><span class="Constant">%%</span>&quot; % ((val - 1.0) * 100.)
+
+<span class="Statement">def</span> <span class="Identifier">position_min_y</span>(pos1, pos2):
+    <span class="Statement">if</span> pos1.y &lt; pos2.y:
+        <span class="Statement">return</span> pos1
+    <span class="Statement">return</span> pos2
+
+<span class="Statement">def</span> <span class="Identifier">position_max_y</span>(pos1, pos2):
+    <span class="Statement">if</span> pos1.y &gt; pos2.y:
+        <span class="Statement">return</span> pos1
+    <span class="Statement">return</span> pos2
+
+vis = vp.Graphic()
+vis.width  = len(data)*(bar_width+bar_skip)
+vis.height = <span class="Statement">lambda</span>: vis.width() * 3./4.
+vis.style  = &quot;<span class="Constant">draw,rounded corners=3pt</span>&quot;
+
+title = vis.add(vp.Label())
+title.label     = &quot;<span class="Constant">Speedup</span>&quot;
+title.placement = &quot;<span class="Constant">north</span>&quot;
+title.position  = vis.anchors().north
+title.style     = &quot;<span class="Constant">font=</span><span class="Special">\\</span><span class="Constant">huge</span>&quot;
+
+iter = vis.add(vp.Iterate())
+iter.data = data
+<span class="Comment"># base position</span>
+iter.base = <span class="Statement">lambda</span>: vp.Position(bar_skip/2. + iter.index() * (bar_width+bar_skip), 0)
+
+<span class="Comment"># lower-bar</span>
+low_bar = iter.add(vp.Rectangle())
+low_bar.position = iter.base
+low_bar.width    = bar_width
+low_bar.height   = <span class="Statement">lambda</span>: max(0., (iter.datum().low_value - 1.0) * bar_scale)
+low_bar.style    = styles[&quot;<span class="Constant">nocoal</span>&quot;]
+
+<span class="Comment"># higher part</span>
+high_bar = iter.add(vp.Rectangle())
+high_bar.position = low_bar.anchors().north_west
+<span class="Comment">#high_bar.width    = lambda: ifelse(iter.datum().high == &quot;heur4&quot;,</span>
+<span class="Comment">#       bar_width-.3, bar_width)</span>
+high_bar.width    = bar_width
+high_bar.height   = <span class="Statement">lambda</span>: (iter.datum().high_value - iter.datum().low_value) * bar_scale
+high_bar.style    = <span class="Statement">lambda</span>: styles[iter.datum().high]
+
+mytime = iter.add(vp.Line())
+mytime.position = <span class="Statement">lambda</span>: iter.base().move(0, (iter.datum().newalloc - 1.0) * bar_scale)
+mytime.width    = bar_width
+mytime.style    = &quot;<span class="Constant">draw,thick</span>&quot;
+
+change_label = iter.add(vp.Label())
+change_label.position  = high_bar.anchors().center
+change_label.placement = &quot;<span class="Constant">center</span>&quot;
+change_label.label     = <span class="Statement">lambda</span>: (&quot;<span class="Constant">%+.1f</span><span class="Special">\\</span><span class="Constant">%%</span>&quot; %
+    ((iter.datum().newalloc - iter.datum().heur4) * 100.))
+
+change_label2 = iter.add(vp.Label())
+change_label2.position  = <span class="Statement">lambda</span>: position_max_y(
+        low_bar.anchors().center(),
+        low_bar.anchors().south().move(0, .45))
+change_label2.placement = &quot;<span class="Constant">center</span>&quot;
+change_label2.label     = <span class="Statement">lambda</span>: speedup_to_percent(iter.datum().low_value)
+
+<span class="Comment">#high_label = iter.add(vp.Label())</span>
+<span class="Comment">#high_label.position  = high_bar.anchors().north</span>
+<span class="Comment">#high_label.placement = &quot;north&quot;</span>
+<span class="Comment">#high_label.label     = lambda: speedup_to_percent(iter.datum().high_value)</span>
+<span class="Comment">#high_label.style     = &quot;text=black&quot;</span>
+<span class="Comment">#</span>
+<span class="Comment">#low_label = iter.add(vp.Label())</span>
+<span class="Comment">#low_label.position  = lambda: position_max_y(</span>
+<span class="Comment">#       low_bar.anchors().south().move(0, .45),</span>
+<span class="Comment">#       position_min_y(</span>
+<span class="Comment">#           high_bar.anchors().north().move(0, -.4),</span>
+<span class="Comment">#           low_bar.anchors().north()))</span>
+<span class="Comment">#low_label.placement = &quot;north&quot;</span>
+<span class="Comment">#low_label.label     = lambda: speedup_to_percent(iter.datum().low_value)</span>
+<span class="Comment">#low_label.style     = &quot;text=black&quot;</span>
+
+<span class="Comment"># Put label below bar</span>
+label = iter.add(vp.Label())
+label.position  = <span class="Statement">lambda</span>: low_bar.anchors().south().move(0, -.1)
+label.placement = &quot;<span class="Constant">north</span>&quot;
+label.style     = &quot;<span class="Constant">font=</span><span class="Special">\\</span><span class="Constant">small</span>&quot;
+label.label     = <span class="Statement">lambda</span>: iter.datum().name
+
+
+<span class="Comment"># Create a legend</span>
+<span class="Comment">#label0 = vis.add(vp.Label())</span>
+<span class="Comment">#label0.position = vis.anchors().north_east</span>
+<span class="Comment">#label0.label    = &quot;compared to ``no coalescing''&quot;</span>
+<span class="Comment">#</span>
+<span class="Comment">#legendno = vis.add(vp.Rectangle())</span>
+<span class="Comment">#legendno.position  = lambda: label0.anchors.north_west().move(-.1, 0)</span>
+<span class="Comment">#legendno.placement = &quot;north east&quot;</span>
+<span class="Comment">#legendno.style     = styles[&quot;nocoal&quot;]</span>
+<span class="Comment">#</span>
+<span class="Comment">#label1 = vis.add(vp.Label())</span>
+<span class="Comment">#label1.position = label0.anchors().</span>
+<span class="Comment">#label1.label    = &quot;compared to ``no coalescing''&quot;</span>
+<span class="Comment">#</span>
+<span class="Comment">#legendno = vis.add(vp.Rectangle())</span>
+<span class="Comment">#legendno.position  = lambda: label0.anchors.north_west().move(-.1, 0)</span>
+<span class="Comment">#legendno.placement = &quot;north east&quot;</span>
+<span class="Comment">#legendno.style     = styles[&quot;nocoal&quot;]</span>
+
+
+
+vis.render(sys.stdout)
+</pre>
+</body>
+</html>

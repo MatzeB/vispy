@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>~/develop/vispy/examples/nightingale_rose.py.html</title>
+<meta name="Generator" content="Vim/7.2">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<style type="text/css">
+<!--
+.Constant { color: #ff6060; }
+.Statement { color: #ffff00; }
+pre { font-family: monospace; color: #000000; background-color: #ffffff; }
+body { font-family: monospace; color: #000000; background-color: #ffffff; }
+.Comment { color: #8080ff; }
+.PreProc { color: #ff40ff; }
+-->
+</style>
+</head>
+<body>
+<pre>
+<span class="Comment">#!/usr/bin/env python</span>
+<span class="Comment">#</span>
+<span class="Comment"># This is an attempt to reproduce</span>
+<span class="Comment">#   <a href="http://vis.stanford.edu/protovis/ex/crimea-rose.html">http://vis.stanford.edu/protovis/ex/crimea-rose.html</a></span>
+<span class="PreProc">import</span> vp
+<span class="PreProc">import</span> sys
+
+months = [ &quot;<span class="Constant">Jan</span>&quot;, &quot;<span class="Constant">Feb</span>&quot;, &quot;<span class="Constant">Mar</span>&quot;, &quot;<span class="Constant">Apr</span>&quot;, &quot;<span class="Constant">May</span>&quot;, &quot;<span class="Constant">Jun</span>&quot;, &quot;<span class="Constant">Jul</span>&quot;, &quot;<span class="Constant">Aug</span>&quot;, &quot;<span class="Constant">Sep</span>&quot;, &quot;<span class="Constant">Oct</span>&quot;, &quot;<span class="Constant">Nov</span>&quot;, &quot;<span class="Constant">Dec</span>&quot; ]
+data = [
+<span class="Comment"># wounds, other, diseases</span>
+    { &quot;<span class="Constant">date</span>&quot;:  &quot;<span class="Constant">4/1854</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:  0, &quot;<span class="Constant">other</span>&quot;:110, &quot;<span class="Constant">diseases</span>&quot;: 110 },
+    { &quot;<span class="Constant">date</span>&quot;:  &quot;<span class="Constant">5/1854</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:  0, &quot;<span class="Constant">other</span>&quot;: 95, &quot;<span class="Constant">diseases</span>&quot;: 105 },
+    { &quot;<span class="Constant">date</span>&quot;:  &quot;<span class="Constant">6/1854</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:  0, &quot;<span class="Constant">other</span>&quot;: 40, &quot;<span class="Constant">diseases</span>&quot;:  95 },
+    { &quot;<span class="Constant">date</span>&quot;:  &quot;<span class="Constant">7/1854</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:  0, &quot;<span class="Constant">other</span>&quot;:140, &quot;<span class="Constant">diseases</span>&quot;: 520 },
+    { &quot;<span class="Constant">date</span>&quot;:  &quot;<span class="Constant">8/1854</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;: 20, &quot;<span class="Constant">other</span>&quot;:150, &quot;<span class="Constant">diseases</span>&quot;: 800 },
+    { &quot;<span class="Constant">date</span>&quot;:  &quot;<span class="Constant">9/1854</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:220, &quot;<span class="Constant">other</span>&quot;:230, &quot;<span class="Constant">diseases</span>&quot;: 740 },
+    { &quot;<span class="Constant">date</span>&quot;: &quot;<span class="Constant">10/1854</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:305, &quot;<span class="Constant">other</span>&quot;:310, &quot;<span class="Constant">diseases</span>&quot;: 600 },
+    { &quot;<span class="Constant">date</span>&quot;: &quot;<span class="Constant">11/1854</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:480, &quot;<span class="Constant">other</span>&quot;:290, &quot;<span class="Constant">diseases</span>&quot;: 820 },
+    { &quot;<span class="Constant">date</span>&quot;: &quot;<span class="Constant">12/1854</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:295, &quot;<span class="Constant">other</span>&quot;:310, &quot;<span class="Constant">diseases</span>&quot;:1199 },
+    { &quot;<span class="Constant">date</span>&quot;:  &quot;<span class="Constant">1/1855</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:230, &quot;<span class="Constant">other</span>&quot;:460, &quot;<span class="Constant">diseases</span>&quot;:1440 },
+    { &quot;<span class="Constant">date</span>&quot;:  &quot;<span class="Constant">2/1855</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:180, &quot;<span class="Constant">other</span>&quot;:520, &quot;<span class="Constant">diseases</span>&quot;:1270 },
+    { &quot;<span class="Constant">date</span>&quot;:  &quot;<span class="Constant">3/1855</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:155, &quot;<span class="Constant">other</span>&quot;:350, &quot;<span class="Constant">diseases</span>&quot;: 935 },
+    { &quot;<span class="Constant">date</span>&quot;:  &quot;<span class="Constant">4/1855</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:195, &quot;<span class="Constant">other</span>&quot;:195, &quot;<span class="Constant">diseases</span>&quot;: 560 },
+    { &quot;<span class="Constant">date</span>&quot;:  &quot;<span class="Constant">5/1855</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:180, &quot;<span class="Constant">other</span>&quot;:155, &quot;<span class="Constant">diseases</span>&quot;: 550 },
+    { &quot;<span class="Constant">date</span>&quot;:  &quot;<span class="Constant">6/1855</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:330, &quot;<span class="Constant">other</span>&quot;:130, &quot;<span class="Constant">diseases</span>&quot;: 650 },
+    { &quot;<span class="Constant">date</span>&quot;:  &quot;<span class="Constant">7/1855</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:260, &quot;<span class="Constant">other</span>&quot;:130, &quot;<span class="Constant">diseases</span>&quot;: 430 },
+    { &quot;<span class="Constant">date</span>&quot;:  &quot;<span class="Constant">8/1855</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:290, &quot;<span class="Constant">other</span>&quot;:110, &quot;<span class="Constant">diseases</span>&quot;: 490 },
+    { &quot;<span class="Constant">date</span>&quot;:  &quot;<span class="Constant">9/1855</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:355, &quot;<span class="Constant">other</span>&quot;:100, &quot;<span class="Constant">diseases</span>&quot;: 290 },
+    { &quot;<span class="Constant">date</span>&quot;: &quot;<span class="Constant">10/1855</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:135, &quot;<span class="Constant">other</span>&quot;: 95, &quot;<span class="Constant">diseases</span>&quot;: 245 },
+    { &quot;<span class="Constant">date</span>&quot;: &quot;<span class="Constant">11/1855</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;:100, &quot;<span class="Constant">other</span>&quot;:140, &quot;<span class="Constant">diseases</span>&quot;: 325 },
+    { &quot;<span class="Constant">date</span>&quot;: &quot;<span class="Constant">12/1855</span>&quot;, &quot;<span class="Constant">wounds</span>&quot;: 40, &quot;<span class="Constant">other</span>&quot;:120, &quot;<span class="Constant">diseases</span>&quot;: 215 }
+]
+styles = {
+    &quot;<span class="Constant">wounds</span>&quot;:   &quot;<span class="Constant">fill=red!30,draw=red!10</span>&quot;,
+    &quot;<span class="Constant">other</span>&quot;:    &quot;<span class="Constant">fill=black!20,draw=black!10</span>&quot;,
+    &quot;<span class="Constant">diseases</span>&quot;: &quot;<span class="Constant">fill=blue!20,draw=blue!10</span>&quot;,
+}
+
+data = data[0:12] <span class="Comment"># for now</span>
+
+vis = vp.Graphic()
+
+iter = vis.add(vp.Iterate())
+iter.data = data
+
+<span class="Comment"># sort a &quot;row&quot; of data</span>
+iter.angle        = <span class="Statement">lambda</span>: -0.25 + (iter.index() * (1./12.))
+iter.month_year   = <span class="Statement">lambda</span>: iter.datum()[&quot;<span class="Constant">date</span>&quot;].split(&quot;<span class="Constant">/</span>&quot;)
+iter.sorted_datum = <span class="Statement">lambda</span>: sorted(
+            filter(<span class="Statement">lambda</span> x: x[0] != &quot;<span class="Constant">date</span>&quot;, iter.datum().iteritems()),
+            key=<span class="Statement">lambda</span> x: x[1])
+
+inner_iter = iter.add(vp.Iterate())
+inner_iter.data   = iter.sorted_datum
+inner_iter.first()[&quot;<span class="Constant">radius</span>&quot;] = 0.
+
+wedge = inner_iter.add(vp.Wedge())
+wedge.angle  = iter.angle
+wedge.len    = 1./12.
+wedge.radius = <span class="Statement">lambda</span>: inner_iter.radius()
+wedge.size   = <span class="Statement">lambda</span>: inner_iter.datum()[1] * .004 - inner_iter.radius()
+wedge.style  = <span class="Statement">lambda</span>: styles[inner_iter.datum()[0]]
+
+inner_iter.next()[&quot;<span class="Constant">radius</span>&quot;] = <span class="Statement">lambda</span>: wedge.radius() + wedge.size()
+
+label = iter.add(vp.Label())
+label.rotate   = <span class="Statement">lambda</span>: iter.angle() + (1./12.)*0.5
+label.position = <span class="Statement">lambda</span>: vp.PolarCoordinate(vp.Origin, label.rotate(), max(inner_iter.radius(),1.5))
+label.label    = <span class="Statement">lambda</span>: months[int(iter.month_year()[0])-1]
+
+vis.render(sys.stdout)
+</pre>
+</body>
+</html>

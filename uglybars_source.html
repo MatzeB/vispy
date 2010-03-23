@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>~/develop/vispy/examples/uglybars.py.html</title>
+<meta name="Generator" content="Vim/7.2">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<style type="text/css">
+<!--
+.Constant { color: #ff6060; }
+.Statement { color: #ffff00; }
+.Identifier { color: #00ffff; }
+.Special { color: #ff40ff; }
+.Todo { color: #808080; background-color: #ffff00; }
+pre { font-family: monospace; color: #000000; background-color: #ffffff; }
+body { font-family: monospace; color: #000000; background-color: #ffffff; }
+.Comment { color: #8080ff; }
+.PreProc { color: #ff40ff; }
+-->
+</style>
+</head>
+<body>
+<pre>
+<span class="Comment">#!/usr/bin/env python</span>
+<span class="Comment">#</span>
+<span class="Comment"># Reproduction of bar charts from my last paper</span>
+<span class="Comment"># In retrospect the final image was quiet ugly ;-)</span>
+<span class="PreProc">import</span> vp
+<span class="PreProc">import</span> sys
+
+title = [ &quot;<span class="Constant">benchmark</span>&quot;, &quot;<span class="Constant">gcc</span>&quot;, &quot;<span class="Constant">llvm</span>&quot;, &quot;<span class="Constant">heur4</span>&quot;, &quot;<span class="Constant">newalloc</span>&quot;, &quot;<span class="Constant">nocoal</span>&quot; ]
+rows = [
+    <span class="Comment"># benchmark,     gcc,    llvm, heur4, newalloc, bad</span>
+    [ &quot;<span class="Constant">164.gzip</span>&quot;,    119,   120,    107,  108,   118  ],
+    [ &quot;<span class="Constant">175.vpr</span>&quot;,      86,    86,   91.6,  90.1,  94.4 ],
+    [ &quot;<span class="Constant">176.gcc</span>&quot;,      49.2,  53.7, 53.1,  53.4,  56.3 ],
+    [ &quot;<span class="Constant">181.mcf</span>&quot;,      58,    60.7, 59.3,  57.0,  59.0 ],
+    [ &quot;<span class="Constant">186.crafty</span>&quot;,   63.4,  57.6, 56.5,  56.9,  59.4 ],
+    [ &quot;<span class="Constant">197.parser</span>&quot;,  123,   133,  124  ,   122, 126   ],
+    [ &quot;<span class="Constant">253.perlbmk</span>&quot;,  76.9,  83.9, 84.3,  87.7,  94.2 ],
+    [ &quot;<span class="Constant">254.gap</span>&quot;,      57.4,  57.9, 62.7,  63.2,  66.4 ],
+    [ &quot;<span class="Constant">255.vortex</span>&quot;,   94.2, 112,  101  ,   102, 105   ],
+    [ &quot;<span class="Constant">256.bzip2</span>&quot;,    95.3, 101,   86.5,  86.6,  90.6 ],
+    [ &quot;<span class="Constant">300.twolf</span>&quot;,   138,   137,  131  , 129,   139   ],
+]
+
+<span class="Comment"># Adapt data: create arry with (name, [gcc, llvm, newalloc]) entries</span>
+data = []
+<span class="Statement">for</span> row <span class="Statement">in</span> rows:
+    name     = row[title.index(&quot;<span class="Constant">benchmark</span>&quot;)][4:]
+    gcc      = float(row[title.index(&quot;<span class="Constant">gcc</span>&quot;)])
+    llvm     = float(row[title.index(&quot;<span class="Constant">llvm</span>&quot;)])
+    newalloc = float(row[title.index(&quot;<span class="Constant">newalloc</span>&quot;)])
+    <span class="Comment"># Normalize to gcc time</span>
+    llvm     = llvm/gcc
+    newalloc = newalloc/gcc
+    gcc      = 1.0
+
+    data.append( (name, [gcc, llvm, newalloc]) )
+barcolors = [ &quot;<span class="Constant">black!20</span>&quot;, &quot;<span class="Constant">black!60</span>&quot;, &quot;<span class="Constant">black</span>&quot; ]
+
+<span class="Comment"># helper</span>
+<span class="Statement">def</span> <span class="Identifier">ifelse</span>(cond,true,false):
+    <span class="Statement">if</span> cond:
+        <span class="Statement">return</span> true
+    <span class="Statement">return</span> false
+
+<span class="Comment"># Create the image</span>
+vis         = vp.Graphic()
+vis.options = &quot;<span class="Constant">baseline=(current bounding box.south)</span>&quot;
+vis.width   = 12
+vis.height  = 6
+vis.style   = &quot;<span class="Constant">draw</span>&quot;
+
+label_left = vis.add(vp.Label())
+label_left.style     = &quot;<span class="Constant">rotate=90</span>&quot;
+label_left.placement = &quot;<span class="Constant">south</span>&quot; <span class="Comment"># note that tikz seems to rotate the anchors</span>
+label_left.position  = vis.anchors().west().move(-0.4, 0)
+label_left.label     = &quot;&quot;&quot;
+<span class="Constant">    </span><span class="Special">\\</span><span class="Constant">centering</span>
+<span class="Constant">    </span><span class="Special">\\</span><span class="Constant">small </span>
+<span class="Constant">    </span><span class="Special">\\</span><span class="Constant">begin{tabular}{c}</span>
+<span class="Constant">        Normalized Runtime </span><span class="Special">\\\\</span>
+<span class="Constant">        (smaller is better)</span>
+<span class="Constant">    </span><span class="Special">\\</span><span class="Constant">end{tabular}</span>&quot;&quot;&quot;
+
+<span class="Comment"># </span><span class="Todo">TODO</span><span class="Comment">: add bar legend here</span>
+
+one          = vis.add(vp.Line())
+one.position = vp.Position(0, 4.)
+one.xshift   = vis.width
+
+bar_width = 5.
+skip      = 4.
+scale     = vis.width() / (len(data)*3*bar_width + (len(data)-1)*skip)
+bar_width *= scale
+skip      *= scale
+
+<span class="Comment"># Iterate over benchmarks</span>
+iter      = vis.add(vp.Iterate())
+iter.data = data
+
+<span class="Comment"># convenience for placement</span>
+iter.base = <span class="Statement">lambda</span>: vp.Position(iter.index() * (3*bar_width + skip), 0)
+
+<span class="Comment"># Create 3 bars</span>
+bariter      = iter.add(vp.Iterate())
+bariter.data = <span class="Statement">lambda</span>: iter.datum()[1]
+
+bar          = bariter.add(vp.Rectangle())
+bar.position = <span class="Statement">lambda</span>: iter.base().move(bariter.index()*bar_width, 0)
+bar.width    = bar_width
+bar.height   = <span class="Statement">lambda</span>: bariter.datum() * 4.
+bar.style    = <span class="Statement">lambda</span>: &quot;<span class="Constant">fill=%s</span>&quot; % barcolors[bariter.index()]
+
+<span class="Comment"># with a label on top of the bar</span>
+barlabel           = bariter.add(vp.Label())
+barlabel.position  = <span class="Statement">lambda</span>: ifelse(bar.height() &gt; 4.005,
+        bar.anchors().north(),
+        bar.anchors().north().sety(4.005))
+barlabel.label     = <span class="Statement">lambda</span>: &quot;<span class="Constant">%.2f</span>&quot; % bariter.datum()
+barlabel.style     = &quot;<span class="Constant">rotate=90,font=</span><span class="Special">\\</span><span class="Constant">footnotesize</span>&quot;
+barlabel.placement = &quot;<span class="Constant">west</span>&quot;
+
+<span class="Comment"># Place the benchmark name below the bars</span>
+label           = iter.add(vp.Label())
+label.position  = <span class="Statement">lambda</span>: iter.base().move(bar_width + bar_width/2., 0)
+label.placement = &quot;<span class="Constant">east</span>&quot;
+label.style     = &quot;<span class="Constant">rotate=90,font=</span><span class="Special">\\</span><span class="Constant">small</span>&quot;
+label.label     = <span class="Statement">lambda</span>: iter.datum()[0]
+
+vis.render(sys.stdout)
+</pre>
+</body>
+</html>
