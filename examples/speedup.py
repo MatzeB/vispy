@@ -83,14 +83,14 @@ bar_skip  = 0.3
 
 vis = vp.Graphic()
 vis.width  = len(data)*(bar_width*2+bar_skip)
-vis.height = lambda: vis.width() * 3./4.
+vis.height = 9.75
 vis.style  = "draw,rounded corners=3pt"
 
-title = vis.add(vp.Label())
-title.label     = "Speedup in Percent"
-title.placement = "north"
-title.position  = lambda: vis.anchors().north()
-title.style     = "font=\\huge"
+#title = vis.add(vp.Label())
+#title.label     = "Speedup in Percent"
+#title.placement = "north"
+#title.position  = lambda: vis.anchors().north()
+#title.style     = "font=\\huge"
 
 iter = vis.add(vp.Iterate())
 iter.data = data
@@ -148,5 +148,32 @@ label.placement = "north"
 label.style     = "font=\\small"
 label.label     = lambda: iter.datum().name
 
+# Create a legend
+subfig = vis.add(vp.SubGraphics())
+subfig.placement = "north east"
+subfig.position  = vis.anchors().north_east
+subfig.style     = "draw,rounded corners=3pt,fill=black!20"
+
+label_heur4 = subfig.add(vp.Label())
+label_heur4.label     = "Recoloring"
+
+label_prefalloc = subfig.add(vp.Label())
+label_prefalloc.position  = label_heur4.anchors().south_west
+label_prefalloc.placement = "north west"
+label_prefalloc.label     = "Preference-Guided A."
+
+rect_heur4 = subfig.add(vp.Rectangle())
+rect_heur4.placement = "east"
+rect_heur4.position  = label_heur4.anchors().west
+rect_heur4.width     = 5
+rect_heur4.height    = 5
+rect_heur4.style     = styles["heur4"] + ",draw,sharp corners"
+
+rect_pref = subfig.add(vp.Rectangle())
+rect_pref.placement = "east"
+rect_pref.position  = label_prefalloc.anchors().west
+rect_pref.width     = 5
+rect_pref.height    = 5
+rect_pref.style     = styles["prefalloc"] + ",draw,sharp corners"
 
 vis.render(sys.stdout)
