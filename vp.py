@@ -161,10 +161,9 @@ class Label(Mark):
 		self.anchors = AnchorGetter(self)
 
 	def get_anchor(self, name):
-		myname = self.__myname
 		if name in [ "north_west", "north", "north_east", "west", "center", "east", "south_west", "south", "south_east" ]:
 			name = name.replace("_", " ")
-			return (lambda : Position(0, 0, "%s.%s" % (self.__myname, name)))
+			return (lambda : Position(0, 0, "%s.%s" % (self.__myname(), name)))
 
 	def render(self, out):
 		style     = self.style()
