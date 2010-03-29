@@ -82,7 +82,7 @@ bar_skip  = 0.3
 
 
 vis = vp.Graphic()
-vis.width  = len(data)*(bar_width*2+bar_skip)
+vis.width  = len(data)*(bar_width*2+bar_skip) + bar_skip
 vis.height = 9.75
 vis.style  = "draw,rounded corners=3pt"
 
@@ -95,7 +95,7 @@ vis.style  = "draw,rounded corners=3pt"
 iter = vis.add(vp.Iterate())
 iter.data = data
 # base position
-iter.base = lambda: vp.Position(bar_skip/2. + iter.index() * (bar_width*2+bar_skip), 0)
+iter.base = lambda: vp.Position(bar_skip + iter.index() * (bar_width*2+bar_skip), 0)
 
 # 2 Bars for prefalloc and heur4
 
@@ -175,5 +175,19 @@ rect_pref.position  = label_prefalloc.anchors().west
 rect_pref.width     = 5
 rect_pref.height    = 5
 rect_pref.style     = styles["prefalloc"] + ",draw,sharp corners"
+
+# Scala
+scalaiter = vis.add(vp.Iterate())
+scalaiter.data = lambda: range(0, 13, 3)
+
+scalaline = scalaiter.add(vp.Line())
+scalaline.position = lambda: vis.anchors().south_west().move(0, scalaiter.datum() * 0.8)
+scalaline.xshift   = 0.2
+scalaline.visible = lambda: scalaiter.datum() > 0
+
+scalalabel = scalaiter.add(vp.Label())
+scalalabel.placement = "east"
+scalalabel.position  = lambda: scalaline.anchors().begin().move(-0.1, 0)
+scalalabel.label     = lambda: "%s\\%%" % scalaiter.datum()
 
 vis.render(sys.stdout)

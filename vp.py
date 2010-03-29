@@ -76,7 +76,7 @@ class Mark(Prototype):
 		return val
 
 	def render(self, out):
-		out.write("% a mark\n")
+		raise Exception("can't render Mark (don't use Mark directly in drawings)")
 
 	def set_parent(self, new_parent):
 		self.parent = new_parent
@@ -201,6 +201,7 @@ class TikzNode(Mark):
 class Label(TikzNode):
 	defaults       = Prototype(TikzNode.defaults)
 	defaults.label = ""
+	defaults.visible = True
 
 	name_base = "label"
 
@@ -208,6 +209,9 @@ class Label(TikzNode):
 		super(Label,self).__init__()
 
 	def render(self, out):
+		if not self.visible():
+			return
+
 		self.render_node_begin(out)
 		out.write(self.label())
 		self.render_node_end(out)
@@ -269,6 +273,7 @@ class Line(Mark):
 	defaults.xshift = 1
 	defaults.yshift = 0
 	defaults.style  = "draw"
+	defaults.visible = True
 
 	def __init__(self):
 		super(Mark,self).__init__()
@@ -282,6 +287,8 @@ class Line(Mark):
 		return None
 
 	def render(self, out):
+		if not self.visible():
+			return
 		style = self.style()
 		if style == None:
 			return
