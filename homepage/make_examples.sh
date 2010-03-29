@@ -20,7 +20,7 @@ for p in $PDFS; do
 	cp ../examples/$p $BUILD
 	PDF="$BUILD/$BASE.pdf"
 	PNG="$BUILD/$BASE.png"
-	convert $PDF -resize 384x384 $PNG
+	convert -density 300 $PDF -resize 384x384 $PNG
 
 	SYNTAX="$BUILD/${BASE}_source.html"
 	vim -c ':let html_number_lines=0' -c ':let html_use_css=1' -c ':TOhtml' -c ":w $SYNTAX" -c ':q!' -c ':q!' ../examples/$BASE.py
