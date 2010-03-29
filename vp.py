@@ -213,7 +213,7 @@ class Label(TikzNode):
 			return
 
 		self.render_node_begin(out)
-		out.write(self.label())
+		out.write("%s" % self.label())
 		self.render_node_end(out)
 
 class SubGraphics(TikzNode):
