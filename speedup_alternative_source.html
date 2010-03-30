@@ -21,7 +21,10 @@ body { font-family: monospace; color: #000000; background-color: #ffffff; }
 <pre>
 <span class="Comment">#!/usr/bin/env python</span>
 <span class="Comment">#</span>
-<span class="Comment"># An alternative version of speedup.py (which was not used in the end)</span>
+<span class="Comment"># # Stacked barchart</span>
+<span class="Comment">#</span>
+<span class="Comment"># Stacked barchart example from one of my talks (it was later replaced by a</span>
+<span class="Comment"># grouped barchart)</span>
 <span class="PreProc">import</span> vp
 <span class="PreProc">import</span> sys
 
@@ -53,8 +56,6 @@ data = []
     <span class="Comment"># Calculate speedup compared to nocoal</span>
     newalloc = nocoal/newalloc
     heur4    = nocoal/heur4
-    <span class="Statement">if</span> heur4 &lt; 1.0:
-        heur4 = 1.0
     nocoal   = 1.0
 
     datum = Data()
@@ -79,9 +80,9 @@ styles[&quot;<span class="Constant">newalloc</span>&quot;] = &quot;<span class="
 styles[&quot;<span class="Constant">heur4</span>&quot;]    = &quot;<span class="Constant">fill=blue!15</span>&quot;
 styles[&quot;<span class="Constant">nocoal</span>&quot;]   = &quot;<span class="Constant">fill=black!30</span>&quot;
 
-bar_width = 1.
+bar_width = 0.8
 bar_scale = 80.
-bar_skip  = 0.6
+bar_skip  = 0.5
 
 <span class="Statement">def</span> <span class="Identifier">ifelse</span>(cond,true,false):
     <span class="Statement">if</span> cond:
@@ -135,7 +136,7 @@ high_bar.style    = <span class="Statement">lambda</span>: styles[iter.datum().h
 
 mytime = iter.add(vp.Line())
 mytime.position = <span class="Statement">lambda</span>: iter.base().move(0, (iter.datum().newalloc - 1.0) * bar_scale)
-mytime.width    = bar_width
+mytime.xshift   = bar_width
 mytime.style    = &quot;<span class="Constant">draw,thick</span>&quot;
 
 change_label = iter.add(vp.Label())
@@ -151,50 +152,12 @@ change_label2.position  = <span class="Statement">lambda</span>: position_max_y(
 change_label2.placement = &quot;<span class="Constant">center</span>&quot;
 change_label2.label     = <span class="Statement">lambda</span>: speedup_to_percent(iter.datum().low_value)
 
-<span class="Comment">#high_label = iter.add(vp.Label())</span>
-<span class="Comment">#high_label.position  = high_bar.anchors().north</span>
-<span class="Comment">#high_label.placement = &quot;north&quot;</span>
-<span class="Comment">#high_label.label     = lambda: speedup_to_percent(iter.datum().high_value)</span>
-<span class="Comment">#high_label.style     = &quot;text=black&quot;</span>
-<span class="Comment">#</span>
-<span class="Comment">#low_label = iter.add(vp.Label())</span>
-<span class="Comment">#low_label.position  = lambda: position_max_y(</span>
-<span class="Comment">#       low_bar.anchors().south().move(0, .45),</span>
-<span class="Comment">#       position_min_y(</span>
-<span class="Comment">#           high_bar.anchors().north().move(0, -.4),</span>
-<span class="Comment">#           low_bar.anchors().north()))</span>
-<span class="Comment">#low_label.placement = &quot;north&quot;</span>
-<span class="Comment">#low_label.label     = lambda: speedup_to_percent(iter.datum().low_value)</span>
-<span class="Comment">#low_label.style     = &quot;text=black&quot;</span>
-
 <span class="Comment"># Put label below bar</span>
 label = iter.add(vp.Label())
 label.position  = <span class="Statement">lambda</span>: low_bar.anchors().south().move(0, -.1)
 label.placement = &quot;<span class="Constant">north</span>&quot;
 label.style     = &quot;<span class="Constant">font=</span><span class="Special">\\</span><span class="Constant">small</span>&quot;
 label.label     = <span class="Statement">lambda</span>: iter.datum().name
-
-
-<span class="Comment"># Create a legend</span>
-<span class="Comment">#label0 = vis.add(vp.Label())</span>
-<span class="Comment">#label0.position = vis.anchors().north_east</span>
-<span class="Comment">#label0.label    = &quot;compared to ``no coalescing''&quot;</span>
-<span class="Comment">#</span>
-<span class="Comment">#legendno = vis.add(vp.Rectangle())</span>
-<span class="Comment">#legendno.position  = lambda: label0.anchors.north_west().move(-.1, 0)</span>
-<span class="Comment">#legendno.placement = &quot;north east&quot;</span>
-<span class="Comment">#legendno.style     = styles[&quot;nocoal&quot;]</span>
-<span class="Comment">#</span>
-<span class="Comment">#label1 = vis.add(vp.Label())</span>
-<span class="Comment">#label1.position = label0.anchors().</span>
-<span class="Comment">#label1.label    = &quot;compared to ``no coalescing''&quot;</span>
-<span class="Comment">#</span>
-<span class="Comment">#legendno = vis.add(vp.Rectangle())</span>
-<span class="Comment">#legendno.position  = lambda: label0.anchors.north_west().move(-.1, 0)</span>
-<span class="Comment">#legendno.placement = &quot;north east&quot;</span>
-<span class="Comment">#legendno.style     = styles[&quot;nocoal&quot;]</span>
-
-
 
 vis.render(sys.stdout)
 </pre>

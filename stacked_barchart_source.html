@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>~/develop/vispy/examples/stacked_barchart.py.html</title>
+<meta name="Generator" content="Vim/7.2">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<style type="text/css">
+<!--
+.Constant { color: #ff6060; }
+.Statement { color: #ffff00; }
+pre { font-family: monospace; color: #000000; background-color: #ffffff; }
+body { font-family: monospace; color: #000000; background-color: #ffffff; }
+.Comment { color: #8080ff; }
+.PreProc { color: #ff40ff; }
+-->
+</style>
+</head>
+<body>
+<pre>
+<span class="Comment">#!/usr/bin/env python</span>
+<span class="Comment">#</span>
+<span class="Comment"># # Stacked barchart</span>
+<span class="Comment">#</span>
+<span class="Comment"># A stacked barchart. This mimicks: </span>
+<span class="Comment"># &lt;<a href="http://de.wikipedia.org/wiki/Datei:Anteil_Nimitz.png">http://de.wikipedia.org/wiki/Datei:Anteil_Nimitz.png</a>&gt;</span>
+<span class="PreProc">import</span> vp
+<span class="PreProc">import</span> sys
+
+data = [
+    { &quot;<span class="Constant">year</span>&quot;:1975, &quot;<span class="Constant">complete</span>&quot;: 14, &quot;<span class="Constant">nimitz</span>&quot;:  1 },
+    { &quot;<span class="Constant">year</span>&quot;:1980, &quot;<span class="Constant">complete</span>&quot;: 13, &quot;<span class="Constant">nimitz</span>&quot;:  2 },
+    { &quot;<span class="Constant">year</span>&quot;:1985, &quot;<span class="Constant">complete</span>&quot;: 14, &quot;<span class="Constant">nimitz</span>&quot;:  3 },
+    { &quot;<span class="Constant">year</span>&quot;:1990, &quot;<span class="Constant">complete</span>&quot;: 15, &quot;<span class="Constant">nimitz</span>&quot;:  5 },
+    { &quot;<span class="Constant">year</span>&quot;:1995, &quot;<span class="Constant">complete</span>&quot;: 12, &quot;<span class="Constant">nimitz</span>&quot;:  6 },
+    { &quot;<span class="Constant">year</span>&quot;:2000, &quot;<span class="Constant">complete</span>&quot;: 12, &quot;<span class="Constant">nimitz</span>&quot;:  8 },
+    { &quot;<span class="Constant">year</span>&quot;:2005, &quot;<span class="Constant">complete</span>&quot;: 12, &quot;<span class="Constant">nimitz</span>&quot;:  9 },
+    { &quot;<span class="Constant">year</span>&quot;:2010, &quot;<span class="Constant">complete</span>&quot;: 11, &quot;<span class="Constant">nimitz</span>&quot;: 10 },
+]
+
+bar_width       = 0.33
+bar_space_left  = 0.33
+bar_space_right = 0.33
+bar_skip        = bar_width + bar_space_left + bar_space_right
+data_scale      = 0.15
+
+vis = vp.Graphic()
+
+data_area = vis.add(vp.SubGraphics())
+
+<span class="Comment"># Scale</span>
+scale_iter = data_area.add(vp.Iterate())
+scale_iter.data = <span class="Statement">lambda</span>: range(0, 17, 2)
+
+scale_line = scale_iter.add(vp.Line())
+scale_line.position = <span class="Statement">lambda</span>: vp.Position(0, scale_iter.datum() * data_scale)
+scale_line.xshift = 10 <span class="Comment"># calculated panel width...</span>
+scale_line.style = <span class="Statement">lambda</span>: &quot;<span class="Constant">draw=black!40</span>&quot; <span class="Statement">if</span> scale_iter.datum() &gt; 0 <span class="Statement">else</span> &quot;<span class="Constant">draw=black</span>&quot;
+
+scale_label = scale_iter.add(vp.Label())
+scale_label.position = <span class="Statement">lambda</span>: scale_line.anchors().begin().move(-0.25, 0)
+scale_label.placement = &quot;<span class="Constant">east</span>&quot;
+scale_label.label     = scale_iter.datum
+
+<span class="Comment"># Bars and Bar labels</span>
+iter = data_area.add(vp.Iterate())
+iter.data = data
+
+bar_c = iter.add(vp.Rectangle())
+bar_c.position = <span class="Statement">lambda</span>: vp.Position(bar_space_left + iter.index() * bar_skip, 0)
+bar_c.height   = <span class="Statement">lambda</span>: iter.datum()[&quot;<span class="Constant">complete</span>&quot;] * data_scale
+bar_c.style    = &quot;<span class="Constant">shade,shading=axis,top color=blue!70,bottom color=blue!65</span>&quot;
+bar_c.width    = bar_width
+
+bar_n = iter.add(vp.Rectangle())
+bar_n.position = bar_c.anchors().south_west
+bar_n.height   = <span class="Statement">lambda</span>: iter.datum()[&quot;<span class="Constant">nimitz</span>&quot;] * data_scale
+bar_n.style    = &quot;<span class="Constant">shade,shading=axis,top color=red!70,bottom color=red!65</span>&quot;
+bar_n.width    = bar_width
+
+barlabel = iter.add(vp.Label())
+barlabel.position = <span class="Statement">lambda</span>: bar_c.anchors().south().move(0, -0.25)
+barlabel.label    = <span class="Statement">lambda</span>: iter.datum()[&quot;<span class="Constant">year</span>&quot;]
+barlabel.placement = &quot;<span class="Constant">north</span>&quot;
+
+vis.render(sys.stdout)
+</pre>
+</body>
+</html>
