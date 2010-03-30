@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 #
-# An alternative version of speedup.py (which was not used in the end)
+# # Stacked barchart
+#
+# Stacked barchart example from one of my talks (it was later replaced by a
+# grouped barchart)
 import vp
 import sys
 
@@ -32,8 +35,6 @@ for row in rows:
 	# Calculate speedup compared to nocoal
 	newalloc = nocoal/newalloc
 	heur4    = nocoal/heur4
-	if heur4 < 1.0:
-		heur4 = 1.0
 	nocoal   = 1.0
 
 	datum = Data()
@@ -58,9 +59,9 @@ styles["newalloc"] = "fill=green!40"
 styles["heur4"]    = "fill=blue!15"
 styles["nocoal"]   = "fill=black!30"
 
-bar_width = 1.
+bar_width = 0.8
 bar_scale = 80.
-bar_skip  = 0.6
+bar_skip  = 0.5
 
 def ifelse(cond,true,false):
 	if cond:
@@ -114,7 +115,7 @@ high_bar.style    = lambda: styles[iter.datum().high]
 
 mytime = iter.add(vp.Line())
 mytime.position = lambda: iter.base().move(0, (iter.datum().newalloc - 1.0) * bar_scale)
-mytime.width    = bar_width
+mytime.xshift   = bar_width
 mytime.style    = "draw,thick"
 
 change_label = iter.add(vp.Label())
@@ -130,49 +131,11 @@ change_label2.position  = lambda: position_max_y(
 change_label2.placement = "center"
 change_label2.label     = lambda: speedup_to_percent(iter.datum().low_value)
 
-#high_label = iter.add(vp.Label())
-#high_label.position  = high_bar.anchors().north
-#high_label.placement = "north"
-#high_label.label     = lambda: speedup_to_percent(iter.datum().high_value)
-#high_label.style     = "text=black"
-#
-#low_label = iter.add(vp.Label())
-#low_label.position  = lambda: position_max_y(
-#		low_bar.anchors().south().move(0, .45),
-#		position_min_y(
-#			high_bar.anchors().north().move(0, -.4),
-#			low_bar.anchors().north()))
-#low_label.placement = "north"
-#low_label.label     = lambda: speedup_to_percent(iter.datum().low_value)
-#low_label.style     = "text=black"
-
 # Put label below bar
 label = iter.add(vp.Label())
 label.position  = lambda: low_bar.anchors().south().move(0, -.1)
 label.placement = "north"
 label.style     = "font=\\small"
 label.label     = lambda: iter.datum().name
-
-
-# Create a legend
-#label0 = vis.add(vp.Label())
-#label0.position = vis.anchors().north_east
-#label0.label    = "compared to ``no coalescing''"
-#
-#legendno = vis.add(vp.Rectangle())
-#legendno.position  = lambda: label0.anchors.north_west().move(-.1, 0)
-#legendno.placement = "north east"
-#legendno.style     = styles["nocoal"]
-#
-#label1 = vis.add(vp.Label())
-#label1.position = label0.anchors().
-#label1.label    = "compared to ``no coalescing''"
-#
-#legendno = vis.add(vp.Rectangle())
-#legendno.position  = lambda: label0.anchors.north_west().move(-.1, 0)
-#legendno.placement = "north east"
-#legendno.style     = styles["nocoal"]
-
-
 
 vis.render(sys.stdout)

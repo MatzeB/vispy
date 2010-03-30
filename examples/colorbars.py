@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 #
-# Attempt to rebuild: http://applestooranges.com/blog/post/css-for-bar-graphs/
-#  Vertical CSS Rectangle Graph example
+# # Colorbars
+# 
+# A simple example showing colored bars.
 import vp
 import sys
 

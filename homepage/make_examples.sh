@@ -26,9 +26,20 @@ for p in $PDFS; do
 	vim -c ':let html_number_lines=0' -c ':let html_use_css=1' -c ':TOhtml' -c ":w $SYNTAX" -c ':q!' -c ':q!' ../examples/$BASE.py
 
 	cat >> $EXAMPLES << __EOF__
-	<div id="example">
-		<a href="${BASE}_source.html"><img src="images/$BASE.png"/></a>
+	<div class="example">
+__EOF__
+	./extract_text.py < ../examples/$BASE.py | ./Markdown.pl >> $EXAMPLES
+	cat >> $EXAMPLES << __EOF__
+		<p>
+			<a href="${BASE}_source.html">[Source]</a>
+			<a href="images/${BASE}.pdf">[PDF]</a>
+		</p>
+		<div id="example image">
+			<img src="images/$BASE.png"/>
+		</div>
 	</div>
 __EOF__
+
 done
 
+cat index_top $EXAMPLES index_bottom > index.html

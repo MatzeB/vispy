@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 #
+# # Nightingales Rose
+# 
 # This is an attempt to reproduce
-# 	http://vis.stanford.edu/protovis/ex/crimea-rose.html
+# <http://vis.stanford.edu/protovis/ex/crimea-rose.html>
 import vp
 import sys
 

@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 #
-# Mimick http://de.wikipedia.org/wiki/Datei:Anteil_Nimitz.png
+# # Stacked barchart
+#
+# A stacked barchart. This mimicks: 
+# <http://de.wikipedia.org/wiki/Datei:Anteil_Nimitz.png>
 import vp
 import sys
 
